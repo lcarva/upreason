@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -20,7 +21,57 @@ def find_security_fixes(package: str, version: str) -> list[dict[str, Any]]:
     return asyncio.run(_run())
 
 
-def _format_results(package: str, version: str, fixes: list[dict[str, Any]]) -> str:
+OUTPUT_SCHEMA: dict[str, Any] = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "upreason output",
+    "description": "Security fix information for a Python package version.",
+    "type": "object",
+    "properties": {
+        "package": {
+            "type": "string",
+            "description": "The package name.",
+        },
+        "version": {
+            "type": "string",
+            "description": "The package version that was queried.",
+        },
+        "security_fixes": {
+            "type": "array",
+            "description": "Security advisories fixed by this version.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "The advisory identifier (e.g. GHSA-xxxx).",
+                    },
+                    "summary": {
+                        "type": "string",
+                        "description": "Short description of the vulnerability.",
+                    },
+                    "aliases": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Alternate identifiers such as CVE IDs.",
+                    },
+                },
+                "required": ["id", "summary", "aliases"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["package", "version", "security_fixes"],
+    "additionalProperties": False,
+}
+
+
+def _format_results(package: str, version: str, fixes: list[dict[str, Any]], *, fmt: str = "text") -> str:
+    if fmt == "json":
+        return json.dumps(
+            {"package": package, "version": version, "security_fixes": fixes},
+            indent=2,
+        )
+
     if not fixes:
         return f"{package} {version}: no known security fixes."
 
@@ -52,13 +103,31 @@ examples:
   upreason ./downloads/pkg-1.0.0.tar.gz""",
     )
     parser.add_argument(
+        "--format",
+        choices=["text", "json"],
+        default="text",
+        help="output format (default: text)",
+    )
+    parser.add_argument(
+        "--jsonschema",
+        action="store_true",
+        help="print the JSON output schema and exit",
+    )
+    parser.add_argument(
         "args",
-        nargs="+",
+        nargs="*",
         metavar="TARGET",
         help="PACKAGE VERSION or path to an sdist .tar.gz",
     )
 
     parsed = parser.parse_args(argv)
+
+    if parsed.jsonschema:
+        print(json.dumps(OUTPUT_SCHEMA, indent=2))
+        raise SystemExit(0)
+
+    if not parsed.args:
+        parser.error("expected PACKAGE VERSION or a single sdist .tar.gz path")
 
     if len(parsed.args) == 1 and parsed.args[0].endswith(".tar.gz"):
         sdist_path = Path(parsed.args[0])
@@ -72,4 +141,4 @@ examples:
         parser.error("expected PACKAGE VERSION or a single sdist .tar.gz path")
 
     fixes = find_security_fixes(package, version)
-    print(_format_results(package, version, fixes))
+    print(_format_results(package, version, fixes, fmt=parsed.format))

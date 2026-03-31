@@ -1,4 +1,5 @@
 import io
+import json
 import tarfile
 from unittest.mock import AsyncMock, patch
 
@@ -71,6 +72,124 @@ class TestCLI:
         captured = capsys.readouterr()
         assert "GHSA-xxxx" in captured.out
         assert "Some issue" in captured.out
+
+
+class TestCLIJsonFormat:
+    def test_json_output_with_fixes(self, capsys):
+        mock_fixes = [
+            {
+                "id": "GHSA-9wx4-h78v-vm56",
+                "summary": "Remote code execution vulnerability",
+                "aliases": ["CVE-2024-35195"],
+            },
+        ]
+
+        with patch("upreason.cli.find_security_fixes", return_value=mock_fixes):
+            main(["--format", "json", "requests", "2.32.0"])
+
+        captured = capsys.readouterr()
+        data = json.loads(captured.out)
+        assert data == {
+            "package": "requests",
+            "version": "2.32.0",
+            "security_fixes": [
+                {
+                    "id": "GHSA-9wx4-h78v-vm56",
+                    "summary": "Remote code execution vulnerability",
+                    "aliases": ["CVE-2024-35195"],
+                },
+            ],
+        }
+
+    def test_json_output_no_fixes(self, capsys):
+        with patch("upreason.cli.find_security_fixes", return_value=[]):
+            main(["--format", "json", "requests", "2.29.0"])
+
+        captured = capsys.readouterr()
+        data = json.loads(captured.out)
+        assert data == {
+            "package": "requests",
+            "version": "2.29.0",
+            "security_fixes": [],
+        }
+
+    def test_json_output_multiple_fixes(self, capsys):
+        mock_fixes = [
+            {
+                "id": "GHSA-aaaa",
+                "summary": "Bug A",
+                "aliases": ["CVE-2024-11111"],
+            },
+            {
+                "id": "GHSA-bbbb",
+                "summary": "Bug B",
+                "aliases": [],
+            },
+        ]
+
+        with patch("upreason.cli.find_security_fixes", return_value=mock_fixes):
+            main(["--format", "json", "somepackage", "1.0.0"])
+
+        captured = capsys.readouterr()
+        data = json.loads(captured.out)
+        assert data["package"] == "somepackage"
+        assert data["version"] == "1.0.0"
+        assert len(data["security_fixes"]) == 2
+
+    def test_default_format_is_text(self, capsys):
+        """Without --format, output should be human-readable text (not JSON)."""
+        with patch("upreason.cli.find_security_fixes", return_value=[]):
+            main(["requests", "2.29.0"])
+
+        captured = capsys.readouterr()
+        with pytest.raises(json.JSONDecodeError):
+            json.loads(captured.out)
+
+
+class TestCLIJsonSchema:
+    def test_jsonschema_prints_valid_json(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            main(["--jsonschema"])
+
+        assert exc_info.value.code == 0
+        captured = capsys.readouterr()
+        schema = json.loads(captured.out)
+        assert schema["type"] == "object"
+        assert "properties" in schema
+
+    def test_jsonschema_describes_output_structure(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            main(["--jsonschema"])
+
+        assert exc_info.value.code == 0
+        captured = capsys.readouterr()
+        schema = json.loads(captured.out)
+
+        props = schema["properties"]
+        assert "package" in props
+        assert "version" in props
+        assert "security_fixes" in props
+        assert props["security_fixes"]["type"] == "array"
+
+        fix_props = props["security_fixes"]["items"]["properties"]
+        assert "id" in fix_props
+        assert "summary" in fix_props
+        assert "aliases" in fix_props
+
+    def test_jsonschema_does_not_require_package_args(self, capsys):
+        """--jsonschema should work without any package/version arguments."""
+        with pytest.raises(SystemExit) as exc_info:
+            main(["--jsonschema"])
+
+        assert exc_info.value.code == 0
+
+    def test_jsonschema_no_network_call(self, capsys):
+        """--jsonschema must not trigger any HTTP requests."""
+        with patch("upreason.cli.find_security_fixes") as mock_find:
+            with pytest.raises(SystemExit):
+                main(["--jsonschema"])
+
+        mock_find.assert_not_called()
 
 
 class TestCLIHelp:
