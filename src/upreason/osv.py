@@ -32,11 +32,13 @@ async def find_security_fixes(
     results = []
     for vuln in data.get("vulns", []):
         if _version_is_fix(vuln, version):
-            results.append({
-                "id": vuln["id"],
-                "summary": vuln.get("summary", ""),
-                "aliases": vuln.get("aliases", []),
-            })
+            results.append(
+                {
+                    "id": vuln["id"],
+                    "summary": vuln.get("summary", ""),
+                    "aliases": vuln.get("aliases", []),
+                }
+            )
 
     return results
 

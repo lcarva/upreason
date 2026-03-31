@@ -1,7 +1,5 @@
-import io
 import json
-import tarfile
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -19,7 +17,9 @@ class TestCLI:
             },
         ]
 
-        with patch("upreason.cli.find_security_fixes", return_value=mock_fixes) as mock_find:
+        with patch(
+            "upreason.cli.find_security_fixes", return_value=mock_fixes
+        ) as mock_find:
             main(["requests", "2.32.0"])
 
         mock_find.assert_called_once_with("requests", "2.32.0")
@@ -222,8 +222,12 @@ class TestCLISdist:
         ]
 
         with (
-            patch("upreason.cli.extract_metadata", return_value=mock_metadata) as mock_extract,
-            patch("upreason.cli.find_security_fixes", return_value=mock_fixes) as mock_find,
+            patch(
+                "upreason.cli.extract_metadata", return_value=mock_metadata
+            ) as mock_extract,
+            patch(
+                "upreason.cli.find_security_fixes", return_value=mock_fixes
+            ) as mock_find,
         ):
             main([str(sdist_path)])
 
