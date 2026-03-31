@@ -1,8 +1,11 @@
+import io
+import tarfile
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from upreason.cli import main
+from upreason.sdist import PackageMetadata
 
 
 class TestCLI:
@@ -68,3 +71,52 @@ class TestCLI:
         captured = capsys.readouterr()
         assert "GHSA-xxxx" in captured.out
         assert "Some issue" in captured.out
+
+
+class TestCLISdist:
+    def test_sdist_extracts_and_queries(self, capsys, tmp_path):
+        """Given a .tar.gz path, extract metadata and query for fixes."""
+        sdist_path = tmp_path / "pkg-1.0.0.tar.gz"
+        sdist_path.write_bytes(b"fake")
+
+        mock_metadata = PackageMetadata(name="requests", version="2.32.0")
+        mock_fixes = [
+            {
+                "id": "GHSA-9wx4-h78v-vm56",
+                "summary": "Vulnerability fix",
+                "aliases": ["CVE-2024-35195"],
+            },
+        ]
+
+        with (
+            patch("upreason.cli.extract_metadata", return_value=mock_metadata) as mock_extract,
+            patch("upreason.cli.find_security_fixes", return_value=mock_fixes) as mock_find,
+        ):
+            main([str(sdist_path)])
+
+        mock_extract.assert_called_once()
+        mock_find.assert_called_once_with("requests", "2.32.0")
+
+        captured = capsys.readouterr()
+        assert "GHSA-9wx4-h78v-vm56" in captured.out
+
+    def test_sdist_no_fixes(self, capsys, tmp_path):
+        sdist_path = tmp_path / "six-1.17.0.tar.gz"
+        sdist_path.write_bytes(b"fake")
+
+        mock_metadata = PackageMetadata(name="six", version="1.17.0")
+
+        with (
+            patch("upreason.cli.extract_metadata", return_value=mock_metadata),
+            patch("upreason.cli.find_security_fixes", return_value=[]),
+        ):
+            main([str(sdist_path)])
+
+        captured = capsys.readouterr()
+        assert "no known security fixes" in captured.out.lower()
+
+    def test_sdist_file_not_found(self, tmp_path):
+        missing = tmp_path / "nope.tar.gz"
+
+        with pytest.raises(SystemExit):
+            main([str(missing)])

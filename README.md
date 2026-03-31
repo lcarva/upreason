@@ -23,6 +23,12 @@ requests 2.32.0: 1 security fix(es)
     Certificates not verified on redirects when using `verify=False`
 ```
 
+You can also point upreason at an sdist `.tar.gz` — it will extract the package name and version automatically:
+
+```bash
+upreason ./requests-2.32.0.tar.gz
+```
+
 ```bash
 upreason six 1.16.0
 ```
