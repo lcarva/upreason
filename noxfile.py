@@ -8,7 +8,7 @@ nox.options.reuse_existing_virtualenvs = True
 def tests(session: nox.Session) -> None:
     """Run the full test suite."""
     session.install("-e", ".")
-    session.install("pytest")
+    session.install("pytest", "pytest-asyncio")
     session.run("pytest", *session.posargs)
 
 
@@ -16,7 +16,7 @@ def tests(session: nox.Session) -> None:
 def unit(session: nox.Session) -> None:
     """Run unit tests only."""
     session.install("-e", ".")
-    session.install("pytest")
+    session.install("pytest", "pytest-asyncio")
     session.run("pytest", "tests/unit", *session.posargs)
 
 
@@ -24,5 +24,5 @@ def unit(session: nox.Session) -> None:
 def integration(session: nox.Session) -> None:
     """Run integration tests only."""
     session.install("-e", ".")
-    session.install("pytest")
+    session.install("pytest", "pytest-asyncio")
     session.run("pytest", "tests/integration", *session.posargs)
