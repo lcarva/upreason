@@ -1,7 +1,6 @@
 import argparse
 import asyncio
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -65,7 +64,13 @@ OUTPUT_SCHEMA: dict[str, Any] = {
 }
 
 
-def _format_results(package: str, version: str, fixes: list[dict[str, Any]], *, fmt: str = "text") -> str:
+def _format_results(
+    package: str,
+    version: str,
+    fixes: list[dict[str, Any]],
+    *,
+    fmt: str = "text",
+) -> str:
     if fmt == "json":
         return json.dumps(
             {"package": package, "version": version, "security_fixes": fixes},

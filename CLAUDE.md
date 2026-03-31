@@ -38,4 +38,10 @@ nox -s integration
 
 # Pass extra args to pytest
 nox -s unit -- -k test_name -v
+
+# Lint (check only)
+nox -s lint
+
+# Auto-fix lint and formatting
+nox -s format
 ```

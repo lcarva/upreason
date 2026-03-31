@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
@@ -90,9 +90,7 @@ class TestFindSecurityFixes:
         mock_response.raise_for_status = lambda: None
         mock_client.post.return_value = mock_response
 
-        results = await find_security_fixes(
-            mock_client, "example-package", "1.2.0"
-        )
+        results = await find_security_fixes(mock_client, "example-package", "1.2.0")
 
         assert len(results) == 1
         assert results[0]["id"] == "GHSA-1234-5678-abcd"
@@ -107,9 +105,7 @@ class TestFindSecurityFixes:
         mock_response.raise_for_status = lambda: None
         mock_client.post.return_value = mock_response
 
-        results = await find_security_fixes(
-            mock_client, "example-package", "1.1.0"
-        )
+        results = await find_security_fixes(mock_client, "example-package", "1.1.0")
 
         assert results == []
 
@@ -121,9 +117,7 @@ class TestFindSecurityFixes:
         mock_response.raise_for_status = lambda: None
         mock_client.post.return_value = mock_response
 
-        results = await find_security_fixes(
-            mock_client, "example-package", "1.0.0"
-        )
+        results = await find_security_fixes(mock_client, "example-package", "1.0.0")
 
         assert results == []
 
@@ -135,9 +129,7 @@ class TestFindSecurityFixes:
         mock_response.raise_for_status = lambda: None
         mock_client.post.return_value = mock_response
 
-        results = await find_security_fixes(
-            mock_client, "example-package", "2.0.0"
-        )
+        results = await find_security_fixes(mock_client, "example-package", "2.0.0")
 
         assert results == []
 

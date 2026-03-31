@@ -20,8 +20,8 @@ def extract_metadata(sdist_bytes: bytes) -> PackageMetadata:
     """
     try:
         tar = tarfile.open(fileobj=io.BytesIO(sdist_bytes), mode="r:gz")
-    except tarfile.TarError:
-        raise ValueError("Not a valid .tar.gz archive")
+    except tarfile.TarError as err:
+        raise ValueError("Not a valid .tar.gz archive") from err
 
     with tar:
         pkg_info_member = None
