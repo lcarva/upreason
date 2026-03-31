@@ -42,6 +42,14 @@ def main(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(
         prog="upreason",
         description="Find out why a package version was released.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""\
+examples:
+  # Check a specific package version
+  upreason requests 2.32.0
+
+  # Check an sdist archive
+  upreason ./downloads/pkg-1.0.0.tar.gz""",
     )
     parser.add_argument(
         "args",

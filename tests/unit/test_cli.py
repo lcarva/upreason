@@ -73,6 +73,20 @@ class TestCLI:
         assert "Some issue" in captured.out
 
 
+class TestCLIHelp:
+    def test_help_includes_examples(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            main(["--help"])
+
+        assert exc_info.value.code == 0
+        captured = capsys.readouterr()
+        assert "examples:" in captured.out.lower()
+        assert "# Check a specific package version" in captured.out
+        assert "upreason requests 2.32.0" in captured.out
+        assert "# Check an sdist archive" in captured.out
+        assert ".tar.gz" in captured.out
+
+
 class TestCLISdist:
     def test_sdist_extracts_and_queries(self, capsys, tmp_path):
         """Given a .tar.gz path, extract metadata and query for fixes."""
