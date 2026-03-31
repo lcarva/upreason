@@ -14,7 +14,8 @@ A tool that answers "why was this package version released?" by scanning vulnera
 - **TDD (red/green):** Always write failing tests first, then implement code to make them pass.
 - **Unit tests:** Must run fast with zero external dependencies (no network, no disk I/O). Use mocks/fakes for any external calls. Located in `tests/unit/`.
 - **Integration tests:** Use recorded real data (cassettes/fixtures). Data must originate from actual API responses. Located in `tests/integration/`.
-- **Test runner:** pytest
+- **Test runner:** pytest via nox (all test commands use `nox -s <session>`)
+- **Integration fixtures:** Recorded JSON responses live in `tests/integration/fixtures_*.json`. Must be captured from real API calls, not hand-crafted.
 
 ## Key data sources
 
